@@ -1,5 +1,5 @@
 /*
- * p4bisect.c
+ * p4bisect.cc
  *
  * p4bisect provides the equivalent to git-bisect for Perforce(P4).
  *
@@ -10,35 +10,35 @@
  * published by the Free Software Foundation.
  */
 
-# include <clientapi.h>
+#include <string.h>
+#include "p4bisect.h"
 
-int main(int argc, char **argv)
+P4Bisect::P4Bisect()
 {
-	ClientUser ui;
-	ClientApi client;
-	StrBuf msg;
 	Error e;
+	StrBuf msg;
 
 	fprintf(stdout, "p4bisect - Find by binary search the change that introduced a bug\n");
-
-	// Any special protocol mods
-
-	// client.SetProtocol("tag");
 
 	// Connect to server
 
 	client.Init(&e);
 
 	if (e.Test()) {
-		e.Fmt( &msg );
+		e.Fmt(&msg);
 		fprintf(stderr, "%s\n", msg.Text());
-		return 1;
+		return ;
 	}
+}
 
-	// Run the command "argv[1] argv[2...]"
+P4Bisect::~P4Bisect()
+{
+	Error e;
+	StrBuf msg;
 
-	client.SetArgv(argc - 2, argv + 2);
-	client.Run(argv[1], &ui);
+	if (client.Dropped()) {
+		return ;
+	}
 
 	// Close connection
 
@@ -47,8 +47,28 @@ int main(int argc, char **argv)
 	if (e.Test()) {
 		e.Fmt(&msg);
 		fprintf(stderr, "%s\n", msg.Text());
-		return 1;
 	}
-	
+}
+
+int P4Bisect::start(const char *revision1, const char *revision2)
+{
+	// TODO:  Run the P4 command to get revisions
+
+	//client.SetArgv(argc - 2, argv + 2);
+	//client.Run(argv[1], &ui);
+
+	return 0;
+}
+
+const char *P4Bisect::revision(const int n)
+{
+	// TODO: return the n-th revision
+
+	return NULL;
+}
+
+const int P4Bisect::nr_revisions()
+{
+	// TODO: count the number of revisions
 	return 0;
 }

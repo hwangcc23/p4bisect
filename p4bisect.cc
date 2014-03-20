@@ -58,11 +58,11 @@ int P4Bisect::start(const char *revision1, const char *revision2)
 	return 0;
 }
 
-const char *P4Bisect::revision(const int rev)
+const char *P4Bisect::revision(unsigned long long rev)
 {
 	// TODO: return the n-th revision
 	char temp[100];
-	sprintf(temp, "revision%03d", rev);
+	sprintf(temp, "revision%lld", rev);
 	std::string s = temp;
 	return s.c_str();
 }

@@ -21,7 +21,7 @@ class P4Bisect
 	P4Bisect();
 	~P4Bisect();
 	int start(const char *rev_start, const char *rev_end);
-	const char *revision(const int n);
+	const char *revision(unsigned long long rev);
 	const unsigned int nr_revisions();
 
 	private:

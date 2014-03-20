@@ -13,7 +13,8 @@
 #include <ncurses.h>
 #include "p4bisect.h"
 
-#define COLOR_PAIR_SELECT 1
+#define COLOR_PAIR_SELECTED 1
+#define COLOR_PAIR_STATUS 2
 
 struct view
 {
@@ -30,13 +31,14 @@ void init_display(void)
 {
 	initscr();
 
-	init_pair(COLOR_PAIR_SELECT, COLOR_BLACK, COLOR_WHITE);
-
 	// Enable keypad mode (allow use of the up and down arrows)
 	keypad(stdscr, true);
 
 	// Start using color
 	start_color();
+	use_default_colors();
+	init_pair(COLOR_PAIR_SELECTED, COLOR_WHITE, COLOR_GREEN);
+	init_pair(COLOR_PAIR_STATUS, COLOR_WHITE, COLOR_BLUE);
 
 	// Update the screen
 	refresh();
@@ -44,6 +46,7 @@ void init_display(void)
 	// Hide the cursor, set noecho
 	curs_set(0);
 	noecho();
+	leaveok(stdscr, FALSE);
 }
 
 void init_rev_view(void)
@@ -58,6 +61,18 @@ void init_rev_view(void)
 		rev_view_first = 0;
 	} else {
 		rev_view_first = rev_view_cur - offset;
+	}
+}
+
+void draw_text(WINDOW *window, int y, int x, const char *str, int screen_width)
+{
+	int i;
+
+	for (i = 0; i < (int)strlen(str) && i < screen_width; i++) {
+		mvwprintw(window, y, x + i, "%c", str[i]);
+	}
+	for (; i < screen_width; i++) {
+		mvwprintw(window, y, x + i, " ");
 	}
 }
 
@@ -90,16 +105,25 @@ void draw_windows(void)
 			rev < p4bisect->nr_revisions(); 
 			rev++, y++) {
 		if (rev == rev_view_cur) {
-			mvwprintw(rev_view.window, y, 
-					rev_view.x, "*");
+			wattron(rev_view.window, 
+					COLOR_PAIR(COLOR_PAIR_SELECTED) | A_BOLD);
+			draw_text(rev_view.window, y, rev_view.x, 
+					p4bisect->revision(rev), 
+					rev_view.width);
+			wattroff(rev_view.window, 
+					COLOR_PAIR(COLOR_PAIR_SELECTED) | A_BOLD);
+		} else {
+			draw_text(rev_view.window, y, rev_view.x, 
+					p4bisect->revision(rev), 
+					rev_view.width);
 		}
-		mvwprintw(rev_view.window, y, rev_view.x + 2, 
-				p4bisect->revision(rev));
 		if (y >= rev_view.height) {
 			break;
 		}
 	}
-	mvwprintw(stat_view.window, 0, 0, "status");
+	wattron(stat_view.window, COLOR_PAIR(COLOR_PAIR_STATUS) | A_BOLD);
+	draw_text(stat_view.window, 0, 0, "status", stat_view.width);
+	wattroff(stat_view.window, COLOR_PAIR(COLOR_PAIR_STATUS) | A_BOLD);
 
 	// Update the screen
 	refresh();

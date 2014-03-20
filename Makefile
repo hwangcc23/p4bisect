@@ -7,9 +7,9 @@ BINARY = p4bisect
 RM = /bin/rm -f
 
 C++ = g++
-C++FLAGS = -Wall -c -g -DOS_LINUX
+C++FLAGS = -Wall -c -g -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE
 LINK = g++
-LINKFLAGS = -lrt -lncurses
+LINKFLAGS = -arch x86_64 -framework Cocoa -lpthread -ldl -lobjc -lncurses
 
 ${BINARY} : ${OBJECTS}
 	${LINK} -o ${BINARY} ${OBJECTS} ${LIBRARIES} $(LINKFLAGS)

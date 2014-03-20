@@ -22,7 +22,7 @@ class P4Bisect
 	~P4Bisect();
 	int start(const char *rev_start, const char *rev_end);
 	const char *revision(const int n);
-	const int nr_revisions();
+	const unsigned int nr_revisions();
 
 	private:
 	ClientApi client;

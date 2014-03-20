@@ -10,15 +10,13 @@
  * published by the Free Software Foundation.
  */
 
-#include <string.h>
+#include <string>
 #include "p4bisect.h"
 
 P4Bisect::P4Bisect()
 {
 	Error e;
 	StrBuf msg;
-
-	fprintf(stdout, "p4bisect - Find by binary search the change that introduced a bug\n");
 
 	// Connect to server
 
@@ -60,15 +58,17 @@ int P4Bisect::start(const char *revision1, const char *revision2)
 	return 0;
 }
 
-const char *P4Bisect::revision(const int n)
+const char *P4Bisect::revision(const int rev)
 {
 	// TODO: return the n-th revision
-
-	return NULL;
+	char temp[100];
+	sprintf(temp, "revision%03d", rev);
+	std::string s = temp;
+	return s.c_str();
 }
 
-const int P4Bisect::nr_revisions()
+const unsigned int P4Bisect::nr_revisions()
 {
 	// TODO: count the number of revisions
-	return 0;
+	return 100;
 }

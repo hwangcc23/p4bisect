@@ -48,13 +48,25 @@ P4Bisect::~P4Bisect()
 	}
 }
 
-int P4Bisect::start(const char *revision1, const char *revision2)
+int P4Bisect::start(const char *file, 
+		const char *good, const char *bad)
 {
 	// TODO:  Run the P4 command to get revisions
+#if 0
+	char *args[1];
+	std::string s, s0(file), s1(good), s2(bad);
 
-	//client.SetArgv(argc - 2, argv + 2);
-	//client.Run(argv[1], &ui);
+	if (client.Dropped()) {
+		return -1;
+	}
 
+	s = s0 + "..." + s1 + "," + s2;
+	fprintf(stdout, "s = %s\n", s.c_str());
+
+	args[0] = (char *)s.c_str();
+	client.SetArgv(1, args);
+	client.Run("labels", &ui);
+#endif
 	return 0;
 }
 

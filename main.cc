@@ -10,11 +10,16 @@
  * published by the Free Software Foundation.
  */
 
+#include <getopt.h>
 #include <ncurses.h>
 #include "p4bisect.h"
 
 #define COLOR_PAIR_SELECTED 1
 #define COLOR_PAIR_STATUS 2
+
+#define LOGV(f, args...) fprintf(stdout, f, ## args)
+#define LOGD(f, args...) do { if (debug) fprintf(stderr, f, ## args); } while (0)
+#define LOGE(f, args...) fprintf(stderr, "Error: " f, ## args)
 
 struct view
 {
@@ -26,6 +31,26 @@ struct view rev_view, stat_view;
 P4Bisect *p4bisect;
 static int screen_y, screen_x;
 static unsigned long long rev_view_first, rev_view_cur;
+static const struct option options[] =
+{
+	{ "file", 1, 0, 'f' },
+	{ "good", 1, 0, 'g' },
+	{ "bad", 1, 0, 'b' },
+	{ "help", 0, 0, 'h' },
+	{ NULL, 0, 0, 0 },
+};
+static const char *optstr = "f:g:b:h";
+int debug = 1;
+
+static void usage(void)
+{
+	LOGV("Usage: p4bisect [options]\n");
+	LOGV("Options:\n");
+	LOGV("  -f, --file  //YOUR_DEPOT/YOUR_FILE\n");
+	LOGV("  -g, --good  Specify the good revision\n");
+	LOGV("  -b, --bad   Specify the bad revision\n");
+	LOGV("  -h, --help  Show help message and exit\n");
+}
 
 void init_display(void)
 {
@@ -164,10 +189,53 @@ void rev_view_steps(int steps)
 
 int main(int argc, char **argv)
 {
+	int loptidx, c;
+	const char *file = NULL, *good = NULL, *bad = NULL;
 	int input = 0;
+
+	for (;;) {
+		c = getopt_long(argc, argv, optstr, options, &loptidx);
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'f':
+			file = optarg;
+			break;
+
+		case 'g':
+			good = optarg;
+			break;
+
+		case 'b':
+			bad = optarg;
+			break;
+
+		case 'h':
+			usage();
+			return 0;
+
+		default:
+			LOGE("Unknown argument: %c\n", c);
+			usage();
+			return 0;
+		}
+	}
+
+	if (!file || !good || !bad) {
+		LOGE("file, good revision, bad revigion must be given\n");
+		usage();
+		return 0;
+	}
 
 	p4bisect = new P4Bisect();
 	if (!p4bisect) {
+		LOGE("Fail to create P4Bisect\n");
+		return -1;
+	}
+
+	if (p4bisect->start(file, good, bad)) {
+		LOGE("Fail to start p4bisect\n");
 		return -1;
 	}
 

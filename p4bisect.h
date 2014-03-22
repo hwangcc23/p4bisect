@@ -20,7 +20,8 @@ class P4Bisect
 	public:
 	P4Bisect();
 	~P4Bisect();
-	int start(const char *rev_start, const char *rev_end);
+	int start(const char *file, const char *good, 
+			const char *bad);
 	const char *revision(unsigned long long rev);
 	const unsigned int nr_revisions();
 

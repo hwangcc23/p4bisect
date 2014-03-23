@@ -15,10 +15,16 @@
 
 #include <clientapi.h>
 
+class P4Bisect;
+
 class P4BisectClientUser: public ClientUser
 {
 	public:
 	void Message(Error *err);
+	void SetP4Bisect(P4Bisect *p) { p4bisect = p; };
+
+	private:
+	P4Bisect *p4bisect;
 };
 
 #endif

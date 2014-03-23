@@ -11,12 +11,15 @@
  */
 
 #include "p4bisectclientuser.h"
+#include "p4bisect.h"
 
 void P4BisectClientUser::Message(Error *err)
 {
 	StrBuf buf;
 
 	err->Fmt(buf, EF_PLAIN);
-	
-	//fprintf(stdout, "%s\n", buf.Text());
+
+	if (p4bisect) {
+		p4bisect->AddRevision(buf);
+	}
 }

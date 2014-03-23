@@ -14,6 +14,7 @@
 #define _P4BISECT_H
 
 #include "p4bisectclientuser.h"
+#include <vector>
 
 class P4Bisect
 {
@@ -24,10 +25,12 @@ class P4Bisect
 			const char *bad);
 	const char *revision(unsigned long long rev);
 	const unsigned int nr_revisions();
+	void AddRevision(StrBuf s);
 
 	private:
 	ClientApi client;
 	P4BisectClientUser ui;
+	std::vector<StrBuf> rev_vec;
 };
 
 #endif

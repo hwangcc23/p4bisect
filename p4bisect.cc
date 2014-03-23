@@ -19,6 +19,8 @@ P4Bisect::P4Bisect()
 	Error e;
 	StrBuf msg;
 
+	ui.SetP4Bisect(this);
+
 	// Connect to server
 
 	client.SetTrans(CharSetApi::UTF_8, 0, 0, 0);
@@ -78,15 +80,21 @@ int P4Bisect::start(const char *file,
 
 const char *P4Bisect::revision(unsigned long long rev)
 {
-	// TODO: return the n-th revision
-	char temp[100];
-	sprintf(temp, "revision%lld", rev);
-	std::string s = temp;
-	return s.c_str();
+	if (rev_vec.empty()) {
+		return NULL;
+	}
+	if (rev >= rev_vec.size()) {
+		return NULL;
+	}
+	return rev_vec[rev].Text();
 }
 
 const unsigned int P4Bisect::nr_revisions()
 {
-	// TODO: count the number of revisions
-	return 100;
+	return rev_vec.size();
+}
+
+void P4Bisect::AddRevision(StrBuf s)
+{
+	rev_vec.push_back(s);
 }

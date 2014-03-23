@@ -82,7 +82,7 @@ void init_rev_view(void)
 
 	offset = screen_y / 2 / 2;
 	rev_view_cur = p4bisect->nr_revisions() / 2;
-	if (rev_view_cur <= offset) {
+	if (rev_view_cur <= 2 * offset) {
 		rev_view_first = 0;
 	} else {
 		rev_view_first = rev_view_cur - offset;

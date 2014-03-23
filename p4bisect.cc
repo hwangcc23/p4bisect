@@ -12,6 +12,7 @@
 
 #include <string>
 #include "p4bisect.h"
+#include <i18napi.h>
 
 P4Bisect::P4Bisect()
 {
@@ -20,6 +21,8 @@ P4Bisect::P4Bisect()
 
 	// Connect to server
 
+	client.SetTrans(CharSetApi::UTF_8, 0, 0, 0);
+	client.SetCharset("UTF8");
 	client.Init(&e);
 
 	if (e.Test()) {
@@ -51,22 +54,25 @@ P4Bisect::~P4Bisect()
 int P4Bisect::start(const char *file, 
 		const char *good, const char *bad)
 {
-	// TODO:  Run the P4 command to get revisions
-#if 0
+	// TODO: Currently only labels are supported.
+
 	char *args[1];
-	std::string s, s0(file), s1(good), s2(bad);
+	StrBuf s;
 
 	if (client.Dropped()) {
 		return -1;
 	}
 
-	s = s0 + "..." + s1 + "," + s2;
-	fprintf(stdout, "s = %s\n", s.c_str());
+	s.Append(file);
+	s.Append("...");
+	s.Append(good);
+	s.Append(",");
+	s.Append(bad);
 
-	args[0] = (char *)s.c_str();
+	args[0] = (char *)s.Text();
 	client.SetArgv(1, args);
 	client.Run("labels", &ui);
-#endif
+
 	return 0;
 }
 

@@ -13,6 +13,7 @@
 #include <string>
 #include "p4bisect.h"
 #include <i18napi.h>
+#include <algorithm>
 
 P4Bisect::P4Bisect()
 {
@@ -53,17 +54,17 @@ P4Bisect::~P4Bisect()
 	}
 }
 
-int P4Bisect::start(const char *file, 
+int P4Bisect::start(const char *file, int use_changes,
 		const char *good, const char *bad)
 {
-	// TODO: Currently only labels are supported.
-
 	char *args[1];
 	StrBuf s;
 
 	if (client.Dropped()) {
 		return -1;
 	}
+
+	rev_vec.clear();
 
 	s.Append(file);
 	s.Append("...");
@@ -73,20 +74,48 @@ int P4Bisect::start(const char *file,
 
 	args[0] = (char *)s.Text();
 	client.SetArgv(1, args);
-	client.Run("labels", &ui);
+	client.Run(use_changes? "changes": "labels", &ui);
+
+	if (!rev_vec.empty()) {
+		if (use_changes) {
+			std::reverse(rev_vec.begin(), rev_vec.end());
+		}
+
+		last_good = 0;
+		first_bad = rev_vec.size() - 1;
+		rev_vec[0].status = REV_STAT_GOOD;
+		rev_vec[rev_vec.size() - 1].status = REV_STAT_BAD;
+	}
 
 	return 0;
 }
 
 const char *P4Bisect::revision(unsigned long long rev)
 {
+	std::string s;
+
 	if (rev_vec.empty()) {
 		return NULL;
 	}
 	if (rev >= rev_vec.size()) {
 		return NULL;
 	}
-	return rev_vec[rev].Text();
+
+	switch (rev_vec[rev].status) {
+	case REV_STAT_GOOD:
+		s = "[g] ";
+		break;
+	case REV_STAT_BAD:
+		s = "[b] ";
+		break;
+	default:
+		s = "    ";
+		break;
+	}
+
+	s += rev_vec[rev].desc.c_str();
+
+	return s.c_str();
 }
 
 const unsigned int P4Bisect::nr_revisions()
@@ -96,5 +125,57 @@ const unsigned int P4Bisect::nr_revisions()
 
 void P4Bisect::AddRevision(StrBuf s)
 {
-	rev_vec.push_back(s);
+	struct rev_entry entry;
+
+	entry.desc = s.Text();
+	entry.status = REV_STAT_UNKNOWN;
+
+	rev_vec.push_back(entry);
+}
+
+int P4Bisect::MarkRevision(unsigned long long rev, int good_rev)
+{
+	unsigned long long i;
+
+	if (rev_vec.empty()) {
+		return -1;
+	}
+	if (rev >= rev_vec.size()) {
+		return -1;
+	}
+	if (rev_vec[rev].status != REV_STAT_UNKNOWN) {
+		return -1;
+	}
+	if (rev <= last_good || rev > first_bad) {
+		return -1;
+	}
+
+	if (good_rev) {
+		if (rev_vec[rev].status == REV_STAT_GOOD) {
+			return -1;
+		}
+		for (i = last_good; i <= rev; i++) {
+			rev_vec[i].status = REV_STAT_GOOD;
+		}
+		last_good = rev;
+	} else {
+		if (rev_vec[rev].status == REV_STAT_BAD) {
+			return -1;
+		}
+		for (i = rev; i < first_bad; i++) {
+			rev_vec[i].status = REV_STAT_BAD;
+		}
+		first_bad = rev;
+	}
+
+	return 0;
+}
+
+unsigned long long P4Bisect::CurrentRevision(void)
+{
+	if (!rev_vec.empty()) {
+		return (last_good + first_bad) / 2;
+	} else {
+		return 0;
+	}
 }

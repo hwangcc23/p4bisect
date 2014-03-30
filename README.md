@@ -12,16 +12,7 @@ Provide the equivalent to git-bisect for Perforce(P4).
 2. Build p4bisect via 'P4API=/YOUR_P4API_PATH/p4api-2013.3.784164 make'
 
 3. Login your p4 server
-   EX:
-   hwangcc23 > cat p4config.conf
-   #!/bin/sh
-   export P4USER=hwangcc23
-   export P4CLIENT=ws_hwangcc23
-   export P4PORT=192.168.1.248:3010
-   export P4CHARSET=utf8
-   hwangcc23 > source p4config.conf
-   hwangcc23 > p4 login -p
-   Enter password: 
+![screenshot](https://raw.github.com/hwangcc23/p4bisect/master/p4_login.png)
 
 4. Use p4bisect to debug submits between 3/28 and 3/30.
    hwangcc23 > p4bisect -f //deopt/project/ -g '@>=2014/03/28' -b '@<=2014/03/30'

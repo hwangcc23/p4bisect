@@ -15,11 +15,22 @@
 
 void P4BisectClientUser::Message(Error *err)
 {
-	StrBuf buf;
+	StrBuf sb;
 
-	err->Fmt(buf, EF_PLAIN);
+	err->Fmt(sb, EF_PLAIN);
 
 	if (p4bisect) {
-		p4bisect->AddRevision(buf);
+		if (!p4bisect->SyncingFile(sb)) {
+			p4bisect->AddRevision(sb);
+		}
+	}
+}
+
+void P4BisectClientUser::OutputError(const char *errBuf)
+{
+	StrBuf sb(errBuf);
+
+	if (p4bisect) {
+		p4bisect->SyncingFile(sb);
 	}
 }

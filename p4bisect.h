@@ -23,6 +23,8 @@ struct rev_entry
 	std::string desc;
 };
 
+typedef void (*sync_callback)(const char *msg);
+
 class P4Bisect
 {
 	public:
@@ -35,13 +37,17 @@ class P4Bisect
 	void AddRevision(StrBuf s);
 	int MarkRevision(unsigned long long rev, int good_rev);
 	unsigned long long CurrentRevision(void);
+	int SyncRevision(unsigned long long rev, sync_callback callback);
+	int SyncingFile(StrBuf sb);
 
 	private:
 	enum { REV_STAT_GOOD, REV_STAT_BAD, REV_STAT_UNKNOWN };
 	ClientApi client;
 	P4BisectClientUser ui;
 	std::vector<struct rev_entry> rev_vec;
-	unsigned long long last_good, first_bad;
+	std::string working_file;
+	unsigned long long last_good, first_bad, sync_rev;
+	sync_callback syncing_cb;
 };
 
 #endif

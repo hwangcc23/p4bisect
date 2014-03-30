@@ -1,4 +1,4 @@
-P4API = /Users/hwangcc23/workdir/p4api-2013.3.784164
+P4API ?= p4api-2013.3.784164
 SOURCES = main.cc p4bisect.cc p4bisectclientuser.cc
 INCLUDES = -I$(P4API)/include/p4/
 OBJECTS = ${SOURCES:.cc=.o} 

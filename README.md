@@ -7,6 +7,8 @@ p4bisect
 
 Provide the equivalent to git-bisect for Perforce(P4).
 
+Use a ncurses-based UI to select revisions and mark revisions. (Inspired by the tig project.)
+
 [Usage]:
 
 1. Get p4api from http://www.perforce.com/downloads/Perforce/20-User?qt-perforce_downloads_step_3=6#qt-perforce_downloads_step_3#49
@@ -31,3 +33,8 @@ Provide the equivalent to git-bisect for Perforce(P4).
 7. Repeat the step 6 until a revision which the bug is introduced is found.
 
 8. Can enter 's' to switching between "p4 labels" view and "p4 changes" view.
+
+[Todo]:
+
+1. Support the script function similar to 'git bisect run'
+2. Support dynamically change the revision range to bisect

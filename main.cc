@@ -22,7 +22,6 @@
 #define HELP_MESSAGE "g:good rev,b:bad rev,UP/DOWN/LEFT/RIGHT:cursor,q:quit,s:switch changes/labels"
 
 #define LOGV(f, args...) fprintf(stdout, f, ## args)
-#define LOGD(f, args...) do { if (debug) fprintf(stderr, f, ## args); } while (0)
 #define LOGE(f, args...) fprintf(stderr, "Error: " f, ## args)
 
 struct view
@@ -42,10 +41,11 @@ static const struct option options[] =
 	{ "bad", 1, 0, 'b' },
 	{ "labels", 1, 0, 'l' },
 	{ "changes", 1, 0, 'c' },
+	{ "nosync", 1, 0, 'n' },
 	{ "help", 0, 0, 'h' },
 	{ NULL, 0, 0, 0 },
 };
-static const char *optstr = "f:g:b:lch";
+static const char *optstr = "f:g:b:lcnh";
 int debug = 1;
 static std::string messages;
 
@@ -58,6 +58,7 @@ static void usage(void)
 	LOGV("  -b, --bad     Specify the bad revision\n");
 	LOGV("  -l, --labels  Use P4 labels command\n");
 	LOGV("  -c, --changes Use P4 changes command\n");
+	LOGV("  -n, --nosync  Don't use P4 sync to sync code\n");
 	LOGV("  -h, --help    Show help message and exit\n");
 }
 
@@ -103,7 +104,7 @@ void draw_text(WINDOW *window, int y, int x, const char *str, int screen_width)
 
 void draw_windows(void)
 {
-	unsigned long long offset, rev;
+	unsigned long long rev;
 	unsigned int y;
 
 	wclear(rev_view.window);
@@ -112,11 +113,8 @@ void draw_windows(void)
 
 	getmaxyx(stdscr, screen_y, screen_x);
 
-	offset = screen_y / 2 / 2;
-	if (rev_view_cur <= 2 * offset) {
-		rev_view_first = 0;
-	} else {
-		rev_view_first = rev_view_cur - offset;
+	if ((rev_view_cur - rev_view_first) >= (unsigned long long)screen_y) {
+		rev_view_first = rev_view_cur - screen_y / 2 / 2;
 	}
 
 	// Initialize windows
@@ -206,9 +204,18 @@ void rev_view_steps(int steps)
 	}
 }
 
+void draw_sync_msg(const char *msg)
+{
+	wattron(msg_view.window, COLOR_PAIR(COLOR_PAIR_MESSAGES) | A_BOLD);
+	draw_text(msg_view.window, 0, 0, msg, msg_view.width);
+	wattroff(msg_view.window, COLOR_PAIR(COLOR_PAIR_MESSAGES) | A_BOLD);
+
+	wrefresh(msg_view.window);
+}
+
 int main(int argc, char **argv)
 {
-	int loptidx, c, use_changes = 0;
+	int loptidx, c, use_changes = 0, no_sync = 0;
 	const char *file = NULL, *good = NULL, *bad = NULL;
 	int input = 0;
 
@@ -238,6 +245,10 @@ int main(int argc, char **argv)
 			use_changes = 0;
 			break;
 
+		case 'n':
+			no_sync = 1;
+			break;
+
 		case 'h':
 			usage();
 			return 0;
@@ -265,9 +276,16 @@ int main(int argc, char **argv)
 		LOGE("Fail to start p4bisect\n");
 		return -1;
 	}
+
 	init_rev_view();
 
 	init_display();
+
+	draw_windows();
+
+	if (!no_sync) {
+		p4bisect->SyncRevision(rev_view_cur, draw_sync_msg);
+	}
 
 	while ((char(input) != 'q') && (char(input) != 'Q')) {
 		draw_windows();
@@ -289,6 +307,7 @@ int main(int argc, char **argv)
 
 		case KEY_RIGHT:
 			rev_view_steps(rev_view.width / 2);
+			break;
 
 		case 'g':
 		case 'G':
@@ -296,6 +315,10 @@ int main(int argc, char **argv)
 				messages = "Cannot mark it as a good revision";
 			} else {
 				rev_view_cur = p4bisect->CurrentRevision();
+				if (!no_sync) {
+					p4bisect->SyncRevision(rev_view_cur,
+							draw_sync_msg);
+				}
 			}
 			break;
 
@@ -305,6 +328,10 @@ int main(int argc, char **argv)
 				messages = "Cannot mark it as a bad revision";
 			} else {
 				rev_view_cur = p4bisect->CurrentRevision();
+				if (!no_sync) {
+					p4bisect->SyncRevision(rev_view_cur, 
+							draw_sync_msg);
+				}
 			}
 			break;
 
@@ -315,6 +342,10 @@ int main(int argc, char **argv)
 				messages = "Fail to switch";
 			}
 			rev_view_cur = p4bisect->CurrentRevision();
+			if (!no_sync) {
+				p4bisect->SyncRevision(rev_view_cur, 
+						draw_sync_msg);
+			}
 			break;
 
 		default:

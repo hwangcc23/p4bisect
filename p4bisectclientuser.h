@@ -21,6 +21,7 @@ class P4BisectClientUser: public ClientUser
 {
 	public:
 	void Message(Error *err);
+	void OutputError(const char *errBuf);
 	void SetP4Bisect(P4Bisect *p) { p4bisect = p; };
 
 	private:

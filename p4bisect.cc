@@ -14,6 +14,8 @@
 #include "p4bisect.h"
 #include <i18napi.h>
 #include <algorithm>
+#include <iterator>
+#include <sstream>
 
 P4Bisect::P4Bisect()
 {
@@ -65,8 +67,9 @@ int P4Bisect::start(const char *file, int use_changes,
 	}
 
 	rev_vec.clear();
+	working_file = file;
 
-	s.Append(file);
+	s.Append(working_file.c_str());
 	s.Append("...");
 	s.Append(good);
 	s.Append(",");
@@ -83,11 +86,14 @@ int P4Bisect::start(const char *file, int use_changes,
 
 		last_good = 0;
 		first_bad = rev_vec.size() - 1;
+		sync_rev = rev_vec.size();
 		rev_vec[0].status = REV_STAT_GOOD;
 		rev_vec[rev_vec.size() - 1].status = REV_STAT_BAD;
-	}
 
-	return 0;
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 const char *P4Bisect::revision(unsigned long long rev)
@@ -109,7 +115,11 @@ const char *P4Bisect::revision(unsigned long long rev)
 		s = "[b] ";
 		break;
 	default:
-		s = "    ";
+		if (rev == sync_rev) {
+			s = "[s] ";
+		} else {
+			s = "    ";
+		}
 		break;
 	}
 
@@ -175,6 +185,58 @@ unsigned long long P4Bisect::CurrentRevision(void)
 {
 	if (!rev_vec.empty()) {
 		return (last_good + first_bad) / 2;
+	} else {
+		return 0;
+	}
+}
+
+int P4Bisect::SyncRevision(unsigned long long rev, sync_callback callback)
+{
+	char *args[1];
+	StrBuf sb;
+
+	if (client.Dropped()) {
+		return -1;
+	}
+	if (rev_vec.empty()) {
+		return -1;
+	}
+	if (rev >= rev_vec.size()) {
+		return -1;
+	}
+
+	// Extract the changelist or label from rev_vec[rev]
+
+	std::string s = rev_vec[rev].desc;
+	std::stringstream ss(s);
+	std::vector<std::string> v;
+
+	v.assign(
+		std::istream_iterator<std::string>(ss),
+		std::istream_iterator<std::string>());
+
+	sb.Append(working_file.c_str());
+	sb.Append("...");
+	sb.Append("@");
+	sb.Append(v[1].c_str());
+
+	syncing_cb = callback;
+
+	args[0] = (char *)sb.Text();
+	client.SetArgv(1, args);
+	client.Run("sync", &ui);
+
+	syncing_cb = NULL;
+	sync_rev = rev;
+
+	return 0;
+}
+
+int P4Bisect::SyncingFile(StrBuf sb)
+{
+	if (syncing_cb) {
+		syncing_cb(sb.Text());
+		return 1;
 	} else {
 		return 0;
 	}

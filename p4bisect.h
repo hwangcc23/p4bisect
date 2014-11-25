@@ -17,17 +17,34 @@
 #include <string>
 #include <vector>
 
-struct rev_entry
+class rev_entry
 {
+public:
 	int status;
+	struct __date {
+		int year, month, day;
+	} date;
 	std::string desc;
+
+	bool operator<(const rev_entry &entry) const 
+	{
+		if (date.year != entry.date.year) {
+			return date.year < entry.date.year;
+		} else if (date.month != entry.date.month) {
+			return date.month < entry.date.month;
+		} else if (date.day != entry.date.day) {
+			return date.day < entry.date.day;
+		} else {
+			return false;
+		}
+	}
 };
 
 typedef void (*sync_callback)(const char *msg);
 
 class P4Bisect
 {
-	public:
+public:
 	P4Bisect();
 	~P4Bisect();
 	int start(const char *file, int use_changes,
@@ -40,11 +57,11 @@ class P4Bisect
 	int SyncRevision(unsigned long long rev, sync_callback callback);
 	int SyncingFile(StrBuf sb);
 
-	private:
+private:
 	enum { REV_STAT_GOOD, REV_STAT_BAD, REV_STAT_UNKNOWN };
 	ClientApi client;
 	P4BisectClientUser ui;
-	std::vector<struct rev_entry> rev_vec;
+	std::vector<rev_entry> rev_vec;
 	std::string working_file;
 	unsigned long long last_good, first_bad, sync_rev;
 	sync_callback syncing_cb;

@@ -80,10 +80,6 @@ int P4Bisect::start(const char *file, int use_changes,
 	client.Run(use_changes? "changes": "labels", &ui);
 
 	if (!rev_vec.empty()) {
-		if (use_changes) {
-			std::reverse(rev_vec.begin(), rev_vec.end());
-		}
-
 		last_good = 0;
 		first_bad = rev_vec.size() - 1;
 		sync_rev = rev_vec.size();
@@ -135,12 +131,38 @@ const unsigned int P4Bisect::nr_revisions()
 
 void P4Bisect::AddRevision(StrBuf s)
 {
-	struct rev_entry entry;
+	rev_entry entry;
+	std::vector<std::string> tokens;
+	char *token;
+	int ret;
 
 	entry.desc = s.Text();
 	entry.status = REV_STAT_UNKNOWN;
 
+	// extract date
+	token = strtok((char *)(s.Text()), " ");
+	while (token != NULL) {
+		tokens.push_back(token);
+		token = strtok(NULL, " ");
+	}
+	if (!tokens.empty()) {
+		// date at the 3rd field in terms of labels
+		ret = sscanf(tokens[2].c_str(), "%d/%d/%d",
+			&(entry.date.year),
+			&(entry.date.month),
+			&(entry.date.day));
+		// date at the 4th field in terms of changes
+		if (ret != 3) {
+			ret = sscanf(tokens[3].c_str(), "%d/%d/%d",
+				&(entry.date.year),
+				&(entry.date.month),
+				&(entry.date.day));
+		}
+	}
+
 	rev_vec.push_back(entry);
+
+	std::sort(rev_vec.begin(), rev_vec.end());
 }
 
 int P4Bisect::MarkRevision(unsigned long long rev, int good_rev)
